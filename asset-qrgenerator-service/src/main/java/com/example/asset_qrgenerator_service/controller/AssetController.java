@@ -15,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/assets")
@@ -48,9 +49,11 @@ public class AssetController {
 
         Asset assetqr = service.generateAssetQR(id);
 
-        if (assetqr.getQrCode() == null) {
-            throw new BadRequestException("Failed to generate QR Code for asset ID: " + id);
-        }
+        Optional.ofNullable(assetqr.getQrCode())
+                .orElseThrow(() ->
+                        new BadRequestException("Failed to generate QR Code for asset ID: " + id)
+                );
+
 
         return ResponseEntity.ok()
                 .contentType(MediaType.IMAGE_PNG)

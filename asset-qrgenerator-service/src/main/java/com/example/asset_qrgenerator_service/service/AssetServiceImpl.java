@@ -9,6 +9,7 @@ import com.example.asset_qrgenerator_service.exception.DuplicateSerialNumExcepti
 import com.example.asset_qrgenerator_service.exception.ResourceNotFoundException;
 import com.example.asset_qrgenerator_service.repository.AssetRepository;
 import com.example.asset_qrgenerator_service.util.QRGenerator;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.zxing.WriterException;
 import org.springframework.stereotype.Service;
 
@@ -18,9 +19,11 @@ import java.io.IOException;
 public class AssetServiceImpl implements AssetService {
 
     private final AssetRepository repository;
+    private final ObjectMapper mapper;
 
-    public AssetServiceImpl(AssetRepository repository) {
+    public AssetServiceImpl(AssetRepository repository, ObjectMapper mapper) {
         this.repository = repository;
+        this.mapper = mapper;
     }
 
     @Override
@@ -38,18 +41,11 @@ public class AssetServiceImpl implements AssetService {
             throw new BadRequestException("Expiry date cannot be before purchase date");
         }
 
-        Asset asset = new Asset();
-        asset.setModelName(dto.getModelName());
-        asset.setSerialNum(dto.getSerialNum());
-        asset.setManufactureDate(dto.getManufactureDate());
-        asset.setPurchaseDate(dto.getPurchaseDate());
-        asset.setExpiryDate(dto.getExpiryDate());
-        asset.setCost(dto.getCost());
-        asset.setType(dto.getType());
+        Asset asset = mapper.convertValue(dto, Asset.class);
 
         Asset saved = repository.save(asset);
 
-        return converttoResponseDto(saved);
+        return mapper.convertValue(saved, AssetResponseDto.class);
     }
 
     @Override
@@ -76,21 +72,7 @@ public class AssetServiceImpl implements AssetService {
     public AssetResponseDto getAsset(Long id) {
         Asset asset = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Asset with ID: " + id + " not found"));
-        return converttoResponseDto(asset);
+        return mapper.convertValue(asset, AssetResponseDto.class);
     }
 
-
-    private AssetResponseDto converttoResponseDto(Asset asset) {
-        AssetResponseDto dto = new AssetResponseDto();
-        dto.setAssetId(asset.getAssetId());
-        dto.setModelName(asset.getModelName());
-        dto.setSerialNum(asset.getSerialNum());
-        dto.setManufactureDate(asset.getManufactureDate());
-        dto.setPurchaseDate(asset.getPurchaseDate());
-        dto.setExpiryDate(asset.getExpiryDate());
-        dto.setCost(asset.getCost());
-        dto.setType(asset.getType());
-        dto.setStatus(asset.getStatus());
-        return dto;
-    }
 }
